@@ -1,194 +1,622 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import sys
 
-# C extensions
-*.so
+# Fighters are stored as a dict: name -> level
+owned_fighters = {"Starter": 1}
+coins = 20
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+all_fighters = [
+    "Warrior", "Mage", "Ninja", "Paladin", "Archer",
+    "Assassin", "Monk", "Viking", "Samurai", "Robot",
+    "Goku", "Knight", "Pirate", "Elf", "Druid",
+    "Berserker", "Hunter", "Priest", "Necromancer", "Alien"
+]
+fighter_prices = {
+    "Warrior": 50, "Mage": 60, "Ninja": 75, "Paladin": 70, "Archer": 55,
+    "Assassin": 80, "Monk": 65, "Viking": 75, "Samurai": 90, "Robot": 120,
+    "Goku": 10000, "Knight": 100, "Pirate": 110, "Elf": 90, "Druid": 95,
+    "Berserker": 130, "Hunter": 85, "Priest": 70, "Necromancer": 150, "Alien": 200
+}
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+# 20 Items
+all_items = {
+    "Sword": {"base_bonus": 2, "price": 30},
+    "Shield": {"base_bonus": 1, "price": 25},
+    "Axe": {"base_bonus": 3, "price": 40},
+    "Bow": {"base_bonus": 2, "price": 35},
+    "Dagger": {"base_bonus": 2, "price": 28},
+    "Hammer": {"base_bonus": 4, "price": 50},
+    "Staff": {"base_bonus": 3, "price": 45},
+    "Spear": {"base_bonus": 3, "price": 38},
+    "Crossbow": {"base_bonus": 2, "price": 36},
+    "Mace": {"base_bonus": 3, "price": 42},
+    "Wand": {"base_bonus": 2, "price": 33},
+    "Scythe": {"base_bonus": 4, "price": 55},
+    "Katana": {"base_bonus": 3, "price": 48},
+    "Rapier": {"base_bonus": 2, "price": 34},
+    "Flail": {"base_bonus": 3, "price": 41},
+    "Halberd": {"base_bonus": 4, "price": 53},
+    "Morningstar": {"base_bonus": 3, "price": 47},
+    "Club": {"base_bonus": 2, "price": 29},
+    "Trident": {"base_bonus": 3, "price": 39},
+    "Sling": {"base_bonus": 1, "price": 20}
+}
+owned_items = {}  # item_name: level
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# 20 Attacks
+all_attacks = {
+    "Kamehameha": {"price": 5000, "power": 50000, "upgradable": False},
+    "Fireball": {"price": 800, "power": 1200, "upgradable": True},
+    "Thunder Strike": {"price": 1500, "power": 2500, "upgradable": True},
+    "Mega Punch": {"price": 2000, "power": 4000, "upgradable": True},
+    "Ice Blast": {"price": 1200, "power": 1800, "upgradable": True},
+    "Wind Slash": {"price": 900, "power": 1300, "upgradable": True},
+    "Earthquake": {"price": 2200, "power": 4200, "upgradable": True},
+    "Shadow Sneak": {"price": 1600, "power": 2600, "upgradable": True},
+    "Solar Beam": {"price": 2500, "power": 5000, "upgradable": True},
+    "Water Jet": {"price": 1100, "power": 1700, "upgradable": True},
+    "Poison Sting": {"price": 1000, "power": 1500, "upgradable": True},
+    "Meteor Kick": {"price": 1800, "power": 3000, "upgradable": True},
+    "Dragon Roar": {"price": 3000, "power": 6000, "upgradable": True},
+    "Lightning Bolt": {"price": 1700, "power": 2700, "upgradable": True},
+    "Blade Dance": {"price": 1400, "power": 2100, "upgradable": True},
+    "Spirit Bomb": {"price": 3500, "power": 7000, "upgradable": True},
+    "Venom Bite": {"price": 1300, "power": 1900, "upgradable": True},
+    "Comet Crash": {"price": 2000, "power": 4000, "upgradable": True},
+    "Phoenix Flare": {"price": 3200, "power": 6500, "upgradable": True},
+    "Tornado Spin": {"price": 1250, "power": 1750, "upgradable": True}
+}
+owned_attacks = {}  # attack_name: level (Kamehameha will always be level 1)
+equipped_attacks = {}  # fighter_name: attack_name
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
+# Track wins and losses per fighter
+battle_stats = {name: {"battles": 0, "wins": 0, "losses": 0} for name in owned_fighters}
+equipped_items = {}  # fighter_name: item_name
 
-# Translations
-*.mo
-*.pot
+def show_menu():
+    print("\n=== Main Menu ===")
+    print("1. Battle")
+    print("2. Shop")
+    print("3. Fighters")
+    print("4. Items")
+    print("5. Options")
+    print("6. Exit")
+    choice = input("Choose an option: ")
+    if choice == "1":
+        start_battle()
+    elif choice == "2":
+        open_shop()
+    elif choice == "3":
+        show_fighters()
+    elif choice == "4":
+        items_menu()
+    elif choice == "5":
+        show_options()
+    elif choice == "6":
+        print("Goodbye!")
+        sys.exit()
+    else:
+        print("Invalid option. Try again.")
+        show_menu()
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+def choose_fighter():
+    print("\nChoose your fighter:")
+    for idx, (fighter, level) in enumerate(owned_fighters.items(), 1):
+        stats = battle_stats.get(fighter, {"battles": 0, "wins": 0, "losses": 0})
+        item = equipped_items.get(fighter, "None")
+        attack = equipped_attacks.get(fighter, "None")
+        print(f"{idx}. {fighter} (Level {level}) | Item: {item} | Attack: {attack} | Battles: {stats['battles']} | Wins: {stats['wins']} | Losses: {stats['losses']}")
+    choice = input("Enter number: ")
+    if choice.isdigit():
+        choice = int(choice)
+        if 1 <= choice <= len(owned_fighters):
+            return list(owned_fighters.keys())[choice-1]
+    print("Invalid choice.")
+    return choose_fighter()
 
-# Flask stuff:
-instance/
-.webassets-cache
+def start_battle():
+    global coins
+    fighter = choose_fighter()
+    level = owned_fighters[fighter]
+    if fighter not in battle_stats:
+        battle_stats[fighter] = {"battles": 0, "wins": 0, "losses": 0}
+    keep_playing = True
+    wins = 0
+    losses = 0
+    enemy_hp_base = 8
+    enemy_attack_base = 2
 
-# Scrapy stuff:
-.scrapy
+    while keep_playing:
+        enemy_hp = enemy_hp_base + (wins // 2) * 2
+        enemy_attack = enemy_attack_base + (wins // 2)
+        if fighter == "Goku":
+            player_hp = 2000
+            attack_power = 20000
+            item_name = None
+            item_bonus = 0
+        else:
+            player_hp = 10 + (level - 1) * 2
+            item_name = equipped_items.get(fighter)
+            item_bonus = 0
+            if item_name and item_name in owned_items:
+                item_bonus = all_items[item_name]["base_bonus"] + (owned_items[item_name] - 1)
+            attack_power = 3 + (level - 1) + item_bonus
 
-# Sphinx documentation
-docs/_build/
+        attack_name = equipped_attacks.get(fighter, None)
 
-# PyBuilder
-.pybuilder/
-target/
+        battle_stats[fighter]["battles"] += 1
 
-# Jupyter Notebook
-.ipynb_checkpoints
+        print(f"\n=== Battle ===")
+        print(f"Your wins: {wins} | Your losses: {losses}")
+        print(f"You have {player_hp} HP. Enemy has {enemy_hp} HP.")
+        if fighter == "Goku":
+            print("Equipped item: None (Goku doesn't need items!)")
+        else:
+            print(f"Equipped item: {item_name if item_name else 'None'} (Bonus: {item_bonus})")
+        print(f"Equipped attack: {attack_name if attack_name else 'None'}")
 
-# IPython
-profile_default/
-ipython_config.py
+        while player_hp > 0 and enemy_hp > 0:
+            print("Choose your action:")
+            print("1. Attack")
+            print("2. Defend")
+            if attack_name:
+                print("3. Use Attack")
+                print("4. Quit Battle")
+            else:
+                print("3. Quit Battle")
+            action = input("Action: ")
+            if action == "1":
+                print(f"You attack the enemy! (Power: {attack_power})")
+                enemy_hp -= attack_power
+            elif action == "2":
+                print("You defend! Enemy's attack does less damage.")
+            elif action == "3" and attack_name:
+                if attack_name == "Kamehameha":
+                    print(f"Goku uses Kamehameha! (Power: 50000)")
+                    enemy_hp -= all_attacks["Kamehameha"]["power"]
+                else:
+                    attack_level = owned_attacks[attack_name]
+                    power = all_attacks[attack_name]["power"] + (attack_level - 1) * 500
+                    print(f"{fighter} uses {attack_name}! (Power: {power})")
+                    enemy_hp -= power
+            elif (action == "3" and not attack_name) or (action == "4" and attack_name):
+                print("You left the battle.")
+                show_menu()
+                return
+            else:
+                print("Invalid action. You miss your turn!")
 
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+            if enemy_hp <= 0:
+                print("You defeated the enemy!")
+                coins += 10
+                print("You earned 10 coins!")
+                wins += 1
+                battle_stats[fighter]["wins"] += 1
+                break
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+            # Enemy attacks
+            if action == "2":
+                print("Enemy attacks you, but you defended!")
+                player_hp -= 1
+            else:
+                print("Enemy attacks you!")
+                player_hp -= enemy_attack
 
-# UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#uv.lock
+            if player_hp <= 0:
+                print("You were defeated by the enemy!")
+                losses += 1
+                battle_stats[fighter]["losses"] += 1
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
+        again = input("\nDo you want to battle again with this fighter? (y/n): ").strip().lower()
+        if again != "y":
+            keep_playing = False
+            show_menu()
+            return
 
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/latest/usage/project/#working-with-version-control
-.pdm.toml
-.pdm-python
-.pdm-build/
+def open_shop():
+    global coins
+    print("\n=== Shop ===")
+    print(f"You have {coins} coins.")
+    print("1. Buy Fighters")
+    print("2. Upgrade Fighters")
+    print("3. Buy Items")
+    print("4. Buy Attacks")
+    print("5. Back to menu")
+    choice = input("Choose an option: ")
+    if choice == "1":
+        buy_fighters()
+    elif choice == "2":
+        upgrade_fighters()
+    elif choice == "3":
+        items_shop()
+    elif choice == "4":
+        attacks_shop()
+    elif choice == "5":
+        show_menu()
+    else:
+        print("Invalid option.")
+        open_shop()
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
+def buy_fighters():
+    global coins
+    available_fighters = [f for f in all_fighters if f not in owned_fighters]
+    if not available_fighters:
+        print("No fighters available to buy.")
+        input("Press Enter to return to shop...")
+        open_shop()
+        return
+    print("\n=== Buy Fighters ===")
+    for idx, name in enumerate(available_fighters, 1):
+        print(f"{idx}. Buy {name} ({fighter_prices[name]} coins)")
+    print(f"{len(available_fighters)+1}. Back to shop")
+    choice = input("Choose an option: ")
+    if choice.isdigit():
+        choice = int(choice)
+        if 1 <= choice <= len(available_fighters):
+            fighter = available_fighters[choice-1]
+            price = fighter_prices[fighter]
+            if coins >= price:
+                coins -= price
+                owned_fighters[fighter] = 1
+                battle_stats[fighter] = {"battles": 0, "wins": 0, "losses": 0}
+                print(f"You bought {fighter}!")
+            else:
+                print("Not enough coins!")
+            buy_fighters()
+        elif choice == len(available_fighters)+1:
+            open_shop()
+        else:
+            print("Invalid option.")
+            buy_fighters()
+    else:
+        print("Invalid input.")
+        buy_fighters()
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+def upgrade_fighters():
+    global coins
+    print("\n=== Upgrade Fighters ===")
+    for idx, (fighter, level) in enumerate(owned_fighters.items(), 1):
+        if fighter == "Goku":
+            maxed = "(NOT UPGRADABLE)"
+        else:
+            next_cost = 10 + (level - 1) * 5
+            maxed = "(MAX)" if level >= 20 else f"- Upgrade cost: {next_cost} coins"
+        print(f"{idx}. {fighter} (Level {level}) {maxed}")
+    print(f"{len(owned_fighters)+1}. Back to shop")
+    choice = input("Choose a fighter to upgrade: ")
+    if choice == "999":
+        for fighter in owned_fighters:
+            owned_fighters[fighter] = 999
+        print("All fighters upgraded to level 999!")
+        upgrade_fighters()
+        return
+    if choice.isdigit():
+        choice = int(choice)
+        if 1 <= choice <= len(owned_fighters):
+            fighter = list(owned_fighters.keys())[choice-1]
+            if fighter == "Goku":
+                print("Goku cannot be upgraded!")
+                upgrade_fighters()
+                return
+            level = owned_fighters[fighter]
+            upgrade_cost = 10 + (level - 1) * 5
+            if level >= 20:
+                print(f"{fighter} is already at max level!")
+            elif coins >= upgrade_cost:
+                owned_fighters[fighter] += 1
+                coins -= upgrade_cost
+                print(f"{fighter} upgraded to level {owned_fighters[fighter]}! (Cost: {upgrade_cost} coins)")
+            else:
+                print("Not enough coins!")
+            upgrade_fighters()
+        elif choice == len(owned_fighters)+1:
+            open_shop()
+        else:
+            print("Invalid option.")
+            upgrade_fighters()
+    else:
+        print("Invalid input.")
+        upgrade_fighters()
 
-# SageMath parsed files
-*.sage.py
+# === ITEMS SYSTEM ===
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+def items_menu():
+    print("\n=== Items Menu ===")
+    print("1. Equip Item")
+    print("2. Upgrade Item")
+    print("3. Equip Attack")
+    print("4. Upgrade Attack")
+    print("5. Back to menu")
+    choice = input("Choose an option: ")
+    if choice == "1":
+        equip_item()
+    elif choice == "2":
+        upgrade_items()
+    elif choice == "3":
+        equip_attack()
+    elif choice == "4":
+        upgrade_attacks()
+    elif choice == "5":
+        show_menu()
+    else:
+        print("Invalid option.")
+        items_menu()
 
-# Spyder project settings
-.spyderproject
-.spyproject
+def items_shop():
+    global coins
+    available_items = [item for item in all_items if item not in owned_items]
+    if not available_items:
+        print("No new items available to buy.")
+        input("Press Enter to return to shop...")
+        open_shop()
+        return
+    print("\n=== Buy Items ===")
+    for idx, name in enumerate(available_items, 1):
+        print(f"{idx}. Buy {name} (Bonus: {all_items[name]['base_bonus']}, Price: {all_items[name]['price']} coins)")
+    print(f"{len(available_items)+1}. Back to shop")
+    choice = input("Choose an option: ")
+    if choice.isdigit():
+        choice = int(choice)
+        if 1 <= choice <= len(available_items):
+            item = available_items[choice-1]
+            price = all_items[item]["price"]
+            if coins >= price:
+                coins -= price
+                owned_items[item] = 1
+                print(f"You bought {item}!")
+            else:
+                print("Not enough coins!")
+            items_shop()
+        elif choice == len(available_items)+1:
+            open_shop()
+        else:
+            print("Invalid option.")
+            items_shop()
+    else:
+        print("Invalid input.")
+        items_shop()
 
-# Rope project settings
-.ropeproject
+def attacks_shop():
+    global coins
+    available_attacks = [a for a in all_attacks if a not in owned_attacks]
+    if not available_attacks:
+        print("No new attacks available to buy.")
+        input("Press Enter to return to shop...")
+        open_shop()
+        return
+    print("\n=== Buy Attacks ===")
+    for idx, name in enumerate(available_attacks, 1):
+        print(f"{idx}. Buy {name} (Power: {all_attacks[name]['power']}, Price: {all_attacks[name]['price']} coins)")
+    print(f"{len(available_attacks)+1}. Back to shop")
+    choice = input("Choose an option: ")
+    if choice.isdigit():
+        choice = int(choice)
+        if 1 <= choice <= len(available_attacks):
+            attack = available_attacks[choice-1]
+            price = all_attacks[attack]["price"]
+            if coins >= price:
+                coins -= price
+                owned_attacks[attack] = 1
+                print(f"You bought {attack}!")
+            else:
+                print("Not enough coins!")
+            attacks_shop()
+        elif choice == len(available_attacks)+1:
+            open_shop()
+        else:
+            print("Invalid option.")
+            attacks_shop()
+    else:
+        print("Invalid input.")
+        attacks_shop()
 
-# mkdocs documentation
-/site
+def upgrade_attacks():
+    global coins
+    upgradable_attacks = [a for a in owned_attacks if all_attacks[a].get("upgradable", False)]
+    if not upgradable_attacks:
+        print("No upgradable attacks owned!")
+        items_menu()
+        return
+    print("\n=== Upgrade Attacks ===")
+    for idx, attack in enumerate(upgradable_attacks, 1):
+        level = owned_attacks[attack]
+        upgrade_cost = 500 + (level - 1) * 300
+        print(f"{idx}. {attack} (Level {level}) - Upgrade cost: {upgrade_cost} coins")
+    print(f"{len(upgradable_attacks)+1}. Back to items menu")
+    choice = input("Choose an attack to upgrade: ")
+    if choice.isdigit():
+        choice = int(choice)
+        if 1 <= choice <= len(upgradable_attacks):
+            attack = upgradable_attacks[choice-1]
+            level = owned_attacks[attack]
+            upgrade_cost = 500 + (level - 1) * 300
+            if coins >= upgrade_cost:
+                owned_attacks[attack] += 1
+                coins -= upgrade_cost
+                print(f"{attack} upgraded to level {owned_attacks[attack]}! (Cost: {upgrade_cost} coins)")
+            else:
+                print("Not enough coins!")
+            upgrade_attacks()
+        elif choice == len(upgradable_attacks)+1:
+            items_menu()
+        else:
+            print("Invalid option.")
+            upgrade_attacks()
+    else:
+        print("Invalid input.")
+        upgrade_attacks()
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+def equip_item():
+    if not owned_items:
+        print("You don't own any items yet!")
+        items_menu()
+        return
+    print("\n=== Equip Item ===")
+    for idx, fighter in enumerate(owned_fighters, 1):
+        equipped = equipped_items.get(fighter, "None")
+        print(f"{idx}. {fighter} (Equipped: {equipped})")
+    choice = input("Choose a fighter to equip an item: ")
+    if choice.isdigit():
+        choice = int(choice)
+        if 1 <= choice <= len(owned_fighters):
+            fighter = list(owned_fighters.keys())[choice-1]
+            # Show owned items
+            print("Owned items:")
+            for i, item in enumerate(owned_items, 1):
+                print(f"{i}. {item} (Level {owned_items[item]})")
+            item_choice = input("Choose item number to equip: ")
+            if item_choice.isdigit():
+                item_choice = int(item_choice)
+                if 1 <= item_choice <= len(owned_items):
+                    item = list(owned_items.keys())[item_choice-1]
+                    equipped_items[fighter] = item
+                    print(f"{fighter} equipped with {item}!")
+                else:
+                    print("Invalid item.")
+            else:
+                print("Invalid input.")
+        else:
+            print("Invalid fighter.")
+    else:
+        print("Invalid input.")
+    items_menu()
 
-# Pyre type checker
-.pyre/
+def equip_attack():
+    if not owned_attacks:
+        print("You don't own any attacks yet!")
+        items_menu()
+        return
+    print("\n=== Equip Attack ===")
+    for idx, fighter in enumerate(owned_fighters, 1):
+        equipped = equipped_attacks.get(fighter, "None")
+        print(f"{idx}. {fighter} (Equipped attack: {equipped})")
+    choice = input("Choose a fighter to equip an attack: ")
+    if choice.isdigit():
+        choice = int(choice)
+        if 1 <= choice <= len(owned_fighters):
+            fighter = list(owned_fighters.keys())[choice-1]
+            available = []
+            for attack in owned_attacks:
+                if fighter == "Goku":
+                    available.append(attack)
+                elif attack != "Kamehameha":
+                    available.append(attack)
+            if not available:
+                print("No attacks available for this fighter.")
+                items_menu()
+                return
+            print("Owned attacks:")
+            for i, attack in enumerate(available, 1):
+                print(f"{i}. {attack} (Level {owned_attacks[attack]})")
+            attack_choice = input("Choose attack number to equip: ")
+            if attack_choice.isdigit():
+                attack_choice = int(attack_choice)
+                if 1 <= attack_choice <= len(available):
+                    attack = available[attack_choice-1]
+                    equipped_attacks[fighter] = attack
+                    print(f"{fighter} equipped with {attack}!")
+                else:
+                    print("Invalid attack.")
+            else:
+                print("Invalid input.")
+        else:
+            print("Invalid fighter.")
+    else:
+        print("Invalid input.")
+    items_menu()
 
-# pytype static type analyzer
-.pytype/
+def upgrade_items():
+    global coins
+    if not owned_items:
+        print("You don't own any items yet!")
+        items_menu()
+        return
+    print("\n=== Upgrade Items ===")
+    for idx, (item, level) in enumerate(owned_items.items(), 1):
+        upgrade_cost = 15 + (level - 1) * 10
+        maxed = "(MAX)" if level >= 20 else f"- Upgrade cost: {upgrade_cost} coins"
+        print(f"{idx}. {item} (Level {level}) {maxed}")
+    print(f"{len(owned_items)+1}. Back to items menu")
+    choice = input("Choose an item to upgrade: ")
+    if choice.isdigit():
+        choice = int(choice)
+        if 1 <= choice <= len(owned_items):
+            item = list(owned_items.keys())[choice-1]
+            level = owned_items[item]
+            upgrade_cost = 15 + (level - 1) * 10
+            if level >= 20:
+                print(f"{item} is already at max level!")
+            elif coins >= upgrade_cost:
+                owned_items[item] += 1
+                coins -= upgrade_cost
+                print(f"{item} upgraded to level {owned_items[item]}! (Cost: {upgrade_cost} coins)")
+            else:
+                print("Not enough coins!")
+            upgrade_items()
+        elif choice == len(owned_items)+1:
+            items_menu()
+        else:
+            print("Invalid option.")
+            upgrade_items()
+    else:
+        print("Invalid input.")
+        upgrade_items()
 
-# Cython debug symbols
-cython_debug/
+def show_fighters():
+    print("\n=== Your Fighters ===")
+    for fighter, level in owned_fighters.items():
+        stats = battle_stats.get(fighter, {"battles": 0, "wins": 0, "losses": 0})
+        item = equipped_items.get(fighter, "None")
+        attack = equipped_attacks.get(fighter, "None")
+        print(f"- {fighter} (Level {level}) | Item: {item} | Attack: {attack} | Battles: {stats['battles']} | Wins: {stats['wins']} | Losses: {stats['losses']}")
+    input("Press Enter to return to menu...")
+    show_menu()
 
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+def show_options():
+    print("\n=== Options ===")
+    print("1. Debug")
+    print("2. Back to menu")
+    choice = input("Choose an option: ")
+    if choice == "1":
+        show_debug()
+    else:
+        show_menu()
 
-# Abstra
-# Abstra is an AI-powered process automation framework.
-# Ignore directories containing user credentials, local state, and settings.
-# Learn more at https://abstra.io/docs
-.abstra/
+def show_debug():
+    password = input("Enter debug password: ")
+    if password != "2012":
+        print("Incorrect password.")
+        show_options()
+        return
+    global coins, owned_fighters, battle_stats, owned_items, owned_attacks
+    print("\n=== Debug Menu ===")
+    print("1. Unlock all fighters")
+    print("2. Max coins (9999)")
+    print("3. Unlock all items")
+    print("4. Unlock all attacks")
+    print("5. Back to options")
+    choice = input("Choose an option: ")
+    if choice == "1":
+        for fighter in all_fighters:
+            if fighter not in owned_fighters:
+                owned_fighters[fighter] = 1
+                battle_stats[fighter] = {"battles": 0, "wins": 0, "losses": 0}
+        print("All fighters unlocked!")
+        show_debug()
+    elif choice == "2":
+        coins = 9999
+        print("Coins set to 9999!")
+        show_debug()
+    elif choice == "3":
+        for item in all_items:
+            owned_items[item] = 1
+        print("All items unlocked!")
+        show_debug()
+    elif choice == "4":
+        for attack in all_attacks:
+            owned_attacks[attack] = 1
+        print("All attacks unlocked!")
+        show_debug()
+    else:
+        show_options()
 
-# Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
-#  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
-#  you could uncomment the following to ignore the enitre vscode folder
-# .vscode/
-
-# Ruff stuff:
-.ruff_cache/
-
-# PyPI configuration file
-.pypirc
-
-# Cursor
-#  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
-#  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
-#  refer to https://docs.cursor.com/context/ignore-files
-.cursorignore
-.cursorindexingignore
+show_menu()
