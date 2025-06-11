@@ -1,76 +1,229 @@
 import sys
 
+# --- Call check_achievements and check_quests in key places ---
+# Example: after a win in start_battle()
+# ...existing code...
+# if enemy_hp <= 0:
+#     print("You defeated the enemy!")
+#     coins += 10
+#     print("You earned 10 coins!")
+#     wins += 1
+#     battle_stats[fighter]["wins"] += 1
+#     check_achievements()
+#     check_quests("win")
+#     # ...rest of code...
+
+# Example: after buying a fighter in buy_fighters()
+# ...existing code...
+# if coins >= price:
+#     coins -= price
+#     owned_fighters[fighter] = 1
+#     battle_stats[fighter] = {"battles": 0, "wins": 0, "losses": 0}
+#     print(f"You bought {fighter}!")
+#     check_quests("buy_fighter")
+# ...rest of code...
+
+# Example: after upgrading an item in upgrade_items()
+# ...existing code...
+# if coins >= upgrade_cost:
+#     owned_items[item] += 1
+#     coins -= upgrade_cost
+#     print(f"{item} upgraded to level {owned_items[item]}! (Cost: {upgrade_cost} coins)")
+#     check_quests("upgrade_item")
+# ...rest of code...
+
 # Fighters are stored as a dict: name -> level
 owned_fighters = {"Starter": 1}
 coins = 20
+# Equipped items: fighter name -> item name
+equipped_items = {}
 
-all_fighters = [
-    "Warrior", "Mage", "Ninja", "Paladin", "Archer",
-    "Assassin", "Monk", "Viking", "Samurai", "Robot",
-    "Goku", "Knight", "Pirate", "Elf", "Druid",
-    "Berserker", "Hunter", "Priest", "Necromancer", "Alien"
-]
-fighter_prices = {
-    "Warrior": 50, "Mage": 60, "Ninja": 75, "Paladin": 70, "Archer": 55,
-    "Assassin": 80, "Monk": 65, "Viking": 75, "Samurai": 90, "Robot": 120,
-    "Goku": 10000, "Knight": 100, "Pirate": 110, "Elf": 90, "Druid": 95,
-    "Berserker": 130, "Hunter": 85, "Priest": 70, "Necromancer": 150, "Alien": 200
+# --- Define all_attacks dictionary ---
+all_attacks = {
+    "Kamehameha": {"power": 50000, "price": 1000, "upgradable": False},
+    "Punch": {"power": 500, "price": 50, "upgradable": True},
+    "Shadow Slash": {"power": 1000, "price": 200, "upgradable": True},
+    "Spirit Bomb": {"power": 2000, "price": 500, "upgradable": True},
 }
 
-# 20 Items
+# --- Define owned_attacks and equipped_attacks dictionaries ---
+owned_attacks = {}
+equipped_attacks = {}
+
+# --- Define all_items and owned_items dictionaries (if not already defined) ---
 all_items = {
     "Sword": {"base_bonus": 2, "price": 30},
-    "Shield": {"base_bonus": 1, "price": 25},
-    "Axe": {"base_bonus": 3, "price": 40},
-    "Bow": {"base_bonus": 2, "price": 35},
-    "Dagger": {"base_bonus": 2, "price": 28},
-    "Hammer": {"base_bonus": 4, "price": 50},
-    "Staff": {"base_bonus": 3, "price": 45},
-    "Spear": {"base_bonus": 3, "price": 38},
-    "Crossbow": {"base_bonus": 2, "price": 36},
-    "Mace": {"base_bonus": 3, "price": 42},
-    "Wand": {"base_bonus": 2, "price": 33},
-    "Scythe": {"base_bonus": 4, "price": 55},
-    "Katana": {"base_bonus": 3, "price": 48},
-    "Rapier": {"base_bonus": 2, "price": 34},
-    "Flail": {"base_bonus": 3, "price": 41},
-    "Halberd": {"base_bonus": 4, "price": 53},
-    "Morningstar": {"base_bonus": 3, "price": 47},
-    "Club": {"base_bonus": 2, "price": 29},
-    "Trident": {"base_bonus": 3, "price": 39},
-    "Sling": {"base_bonus": 1, "price": 20}
+    "Shield": {"base_bonus": 3, "price": 40},
+    "Armor": {"base_bonus": 5, "price": 60},
 }
-owned_items = {}  # item_name: level
+owned_items = {}
 
-# 20 Attacks
-all_attacks = {
-    "Kamehameha": {"price": 5000, "power": 50000, "upgradable": False},
-    "Fireball": {"price": 800, "power": 1200, "upgradable": True},
-    "Thunder Strike": {"price": 1500, "power": 2500, "upgradable": True},
-    "Mega Punch": {"price": 2000, "power": 4000, "upgradable": True},
-    "Ice Blast": {"price": 1200, "power": 1800, "upgradable": True},
-    "Wind Slash": {"price": 900, "power": 1300, "upgradable": True},
-    "Earthquake": {"price": 2200, "power": 4200, "upgradable": True},
-    "Shadow Sneak": {"price": 1600, "power": 2600, "upgradable": True},
-    "Solar Beam": {"price": 2500, "power": 5000, "upgradable": True},
-    "Water Jet": {"price": 1100, "power": 1700, "upgradable": True},
-    "Poison Sting": {"price": 1000, "power": 1500, "upgradable": True},
-    "Meteor Kick": {"price": 1800, "power": 3000, "upgradable": True},
-    "Dragon Roar": {"price": 3000, "power": 6000, "upgradable": True},
-    "Lightning Bolt": {"price": 1700, "power": 2700, "upgradable": True},
-    "Blade Dance": {"price": 1400, "power": 2100, "upgradable": True},
-    "Spirit Bomb": {"price": 3500, "power": 7000, "upgradable": True},
-    "Venom Bite": {"price": 1300, "power": 1900, "upgradable": True},
-    "Comet Crash": {"price": 2000, "power": 4000, "upgradable": True},
-    "Phoenix Flare": {"price": 3200, "power": 6500, "upgradable": True},
-    "Tornado Spin": {"price": 1250, "power": 1750, "upgradable": True}
+# --- Define all_fighters, fighter_prices, secret_fighter, secret_code, secret_unlocked, sung_guards, battle_stats ---
+all_fighters = ["Goku", "Sung Jin Woo", "Naruto", "Luffy", "Ichigo"]
+fighter_prices = {"Goku": 100, "Sung Jin Woo": 200, "Naruto": 80, "Luffy": 90, "Ichigo": 85}
+secret_fighter = "Sung Jin Woo"
+secret_code = "arise"
+secret_unlocked = False
+sung_guards = set()
+battle_stats = {}
+
+# === Achievements System ===
+achievements = {
+    "First Win": False,
+    "Collector": False,
+    "Champion": False,
+    "Shadow Army": False,
+    "Goku God": False,
+    "Wealthy": False,
+    "Boss Slayer": False,
 }
-owned_attacks = {}  # attack_name: level (Kamehameha will always be level 1)
-equipped_attacks = {}  # fighter_name: attack_name
 
-# Track wins and losses per fighter
-battle_stats = {name: {"battles": 0, "wins": 0, "losses": 0} for name in owned_fighters}
-equipped_items = {}  # fighter_name: item_name
+def check_achievements():
+    # TODO: Implement achievement logic
+    pass
+
+def show_achievements():
+    while True:
+        print("\n=== Achievements ===")
+        for idx, (name, unlocked) in enumerate(achievements.items(), 1):
+            status = "Unlocked" if unlocked else "Locked"
+            print(f"{idx}. {name}: {status}")
+        print("a. View achievement details")
+        print("b. Back to menu")
+        choice = input("Choose an option: ").strip().lower()
+        if choice == "b":
+            show_menu()
+            return
+        elif choice == "a":
+            idx = input("Enter achievement number to view details: ")
+            if idx.isdigit():
+                idx = int(idx)
+                if 1 <= idx <= len(achievements):
+                    name = list(achievements.keys())[idx-1]
+                    print(f"\n{name}:")
+                    print(get_achievement_description(name))
+                    input("Press Enter to return...")
+                else:
+                    print("Invalid achievement number.")
+            else:
+                print("Invalid input.")
+        else:
+            print("Invalid option.")
+
+def get_achievement_description(name):
+    descriptions = {
+        "First Win": "Win your first battle.",
+        "Collector": "Own 5 different fighters.",
+        "Champion": "Win 20 battles.",
+        "Shadow Army": "Raise 10 shadow guards with Sung Jin Woo.",
+        "Goku God": "Upgrade Goku to level 999.",
+        "Wealthy": "Reach 1000 coins.",
+        "Boss Slayer": "Defeat 5 bosses.",
+    }
+    return descriptions.get(name, "No description available.")
+
+# === Quests System ===
+quests = [
+    {"name": "Win 3 battles", "completed": False, "progress": 0, "goal": 3, "reward": 50},
+    {"name": "Buy 2 fighters", "completed": False, "progress": 0, "goal": 2, "reward": 30},
+    {"name": "Upgrade an item", "completed": False, "progress": 0, "goal": 1, "reward": 20},
+    {"name": "Equip an attack", "completed": False, "progress": 0, "goal": 1, "reward": 15},
+]
+
+def check_quests(event=None):
+    global coins
+    for quest in quests:
+        if quest["completed"]:
+            continue
+        if quest["name"] == "Win 3 battles" and event == "win":
+            quest["progress"] += 1
+            if quest["progress"] >= quest["goal"]:
+                quest["completed"] = True
+                print(f"Quest completed: {quest['name']}! Reward: {quest['reward']} coins")
+                coins += quest["reward"]
+        if quest["name"] == "Buy 2 fighters" and event == "buy_fighter":
+            quest["progress"] += 1
+            if quest["progress"] >= quest["goal"]:
+                quest["completed"] = True
+                print(f"Quest completed: {quest['name']}! Reward: {quest['reward']} coins")
+                coins += quest["reward"]
+        if quest["name"] == "Upgrade an item" and event == "upgrade_item":
+            quest["progress"] += 1
+            if quest["progress"] >= quest["goal"]:
+                quest["completed"] = True
+                print(f"Quest completed: {quest['name']}! Reward: {quest['reward']} coins")
+                coins += quest["reward"]
+        if quest["name"] == "Equip an attack" and event == "equip_attack":
+            quest["progress"] += 1
+            if quest["progress"] >= quest["goal"]:
+                quest["completed"] = True
+                print(f"Quest completed: {quest['name']}! Reward: {quest['reward']} coins")
+                coins += quest["reward"]
+
+def show_quests():
+    while True:
+        print("\n=== Quests ===")
+        if not quests:
+            print("No quests available.")
+        else:
+            for idx, quest in enumerate(quests, 1):
+                status = "Completed" if quest.get("completed") else f"In Progress ({quest.get('progress', 0)}/{quest.get('goal', '?')})"
+                print(f"{idx}. {quest.get('name', 'Unknown')} - {status}")
+        print("a. View quest details")
+        print("b. Claim rewards (if any)")
+        print("c. Back to menu")
+        choice = input("Choose an option: ").strip().lower()
+        if choice == "c":
+            show_menu()
+            return
+        elif choice == "a":
+            idx = input("Enter quest number to view details: ")
+            if idx.isdigit():
+                idx = int(idx)
+                if 1 <= idx <= len(quests):
+                    quest = quests[idx-1]
+                    print(f"\n{quest.get('name', 'Unknown')}:")
+                    print(get_quest_description(quest))
+                    input("Press Enter to return...")
+                else:
+                    print("Invalid quest number.")
+            else:
+                print("Invalid input.")
+        elif choice == "b":
+            claimed = False
+            for quest in quests:
+                if quest.get("completed") and not quest.get("claimed", False):
+                    print(f"Claimed reward for quest: {quest['name']} (+{quest['reward']} coins)")
+                    global coins
+                    coins += quest["reward"]
+                    quest["claimed"] = True
+                    claimed = True
+            if not claimed:
+                print("No rewards to claim.")
+            input("Press Enter to return...")
+        else:
+            print("Invalid option.")
+
+def get_quest_description(quest):
+    return f"Goal: {quest.get('goal', '?')} | Reward: {quest.get('reward', 0)} coins"
+
+# Add a help/about section to the menu
+def show_help():
+    print("\n=== Help & About ===")
+    print("Welcome to the Fighters Game!")
+    print("Battle enemies, collect fighters, upgrade items, and complete quests.")
+    print("Achievements are unlocked by reaching special milestones.")
+    print("Quests give you extra rewards for completing specific tasks.")
+    print("Explore the menus to discover all features!")
+    print("Created by a guy.")
+    input("Press Enter to return to menu...")
+    show_menu()
+
+# Update show_menu to include Help/About
+def battle_arena_2d():
+    print("\n=== 2D Arena Mode ===")
+    print("This feature is coming soon!")
+    input("Press Enter to return to the menu...")
 
 def show_menu():
     print("\n=== Main Menu ===")
@@ -79,7 +232,11 @@ def show_menu():
     print("3. Fighters")
     print("4. Items")
     print("5. Options")
-    print("6. Exit")
+    print("6. 2D Arena")
+    print("7. Achievements")
+    print("8. Quests")
+    print("9. Help/About")
+    print("0. Exit")
     choice = input("Choose an option: ")
     if choice == "1":
         start_battle()
@@ -92,12 +249,20 @@ def show_menu():
     elif choice == "5":
         show_options()
     elif choice == "6":
+        battle_arena_2d()
+        show_menu()
+    elif choice == "7":
+        show_achievements()
+    elif choice == "8":
+        show_quests()
+    elif choice == "9":
+        show_help()
+    elif choice == "0":
         print("Goodbye!")
         sys.exit()
     else:
         print("Invalid option. Try again.")
         show_menu()
-
 def choose_fighter():
     print("\nChoose your fighter:")
     for idx, (fighter, level) in enumerate(owned_fighters.items(), 1):
@@ -124,13 +289,34 @@ def start_battle():
     losses = 0
     enemy_hp_base = 8
     enemy_attack_base = 2
+    boss_count = 0  # Track how many bosses have appeared
 
     while keep_playing:
-        enemy_hp = enemy_hp_base + (wins // 2) * 2
-        enemy_attack = enemy_attack_base + (wins // 2)
-        if fighter == "Goku":
-            player_hp = 2000
-            attack_power = 20000
+        # Boss logic
+        if wins > 0 and wins % 3 == 0:
+            boss_count += 1
+            enemy_hp = 50 + boss_count * 50  # Boss HP increases each time
+            enemy_attack = 10 + boss_count * 10  # Boss attack increases each time
+            print(f"\n=== BOSS BATTLE #{boss_count}! ===")
+            print(f"A powerful boss appears with {enemy_hp} HP and {enemy_attack} attack!")
+        else:
+            enemy_hp = enemy_hp_base + (wins // 2) * 2
+            enemy_attack = enemy_attack_base + (wins // 2)
+
+        # ...rest of your battle code (player_hp, attack_power, etc.)...
+        # Sung Jin Woo logic
+        if fighter == "Sung Jin Woo":
+            player_hp = float('inf')
+            attack_power = float('inf')
+            item_name = None
+            item_bonus = 0
+        elif fighter == "Goku":
+            if owned_fighters["Goku"] == 999:
+                player_hp = float('inf')
+                attack_power = float('inf')
+            else:
+                player_hp = 5000
+                attack_power = float('inf')
             item_name = None
             item_bonus = 0
         else:
@@ -142,14 +328,16 @@ def start_battle():
             attack_power = 3 + (level - 1) + item_bonus
 
         attack_name = equipped_attacks.get(fighter, None)
-
         battle_stats[fighter]["battles"] += 1
 
         print(f"\n=== Battle ===")
         print(f"Your wins: {wins} | Your losses: {losses}")
-        print(f"You have {player_hp} HP. Enemy has {enemy_hp} HP.")
-        if fighter == "Goku":
-            print("Equipped item: None (Goku doesn't need items!)")
+        if (fighter == "Goku" and owned_fighters["Goku"] == 999) or fighter == "Sung Jin Woo":
+            print("You have INFINITE HP. Enemy has {} HP.".format(enemy_hp))
+        else:
+            print(f"You have {player_hp} HP. Enemy has {enemy_hp} HP.")
+        if fighter == "Goku" or fighter == "Sung Jin Woo":
+            print("Equipped item: None (Doesn't need items!)")
         else:
             print(f"Equipped item: {item_name if item_name else 'None'} (Bonus: {item_bonus})")
         print(f"Equipped attack: {attack_name if attack_name else 'None'}")
@@ -191,6 +379,16 @@ def start_battle():
                 print("You earned 10 coins!")
                 wins += 1
                 battle_stats[fighter]["wins"] += 1
+                check_achievements()
+                check_quests("win")
+                # Sung Jin Woo raises a guard
+                if fighter == "Sung Jin Woo":
+                    guard_name = f"Shadow Guard {wins}"
+                    if guard_name not in owned_fighters:
+                        owned_fighters[guard_name] = 1
+                        battle_stats[guard_name] = {"battles": 0, "wins": 0, "losses": 0}
+                        sung_guards.add(guard_name)
+                        print(f"Sung Jin Woo raises the enemy as his guard: {guard_name}!")
                 break
 
             # Enemy attacks
@@ -237,8 +435,12 @@ def open_shop():
         open_shop()
 
 def buy_fighters():
-    global coins
-    available_fighters = [f for f in all_fighters if f not in owned_fighters]
+    global coins, secret_unlocked
+    fighters_list = all_fighters.copy()
+    if secret_unlocked and secret_fighter not in fighters_list:
+        fighters_list.append(secret_fighter)
+        fighter_prices[secret_fighter] = 0
+    available_fighters = [f for f in fighters_list if f not in owned_fighters]
     if not available_fighters:
         print("No fighters available to buy.")
         input("Press Enter to return to shop...")
@@ -249,6 +451,11 @@ def buy_fighters():
         print(f"{idx}. Buy {name} ({fighter_prices[name]} coins)")
     print(f"{len(available_fighters)+1}. Back to shop")
     choice = input("Choose an option: ")
+    if not secret_unlocked and choice.lower().strip() == secret_code:
+        secret_unlocked = True
+        print("You have unlocked Sung Jin Woo! He will now appear in the shop.")
+        buy_fighters()
+        return
     if choice.isdigit():
         choice = int(choice)
         if 1 <= choice <= len(available_fighters):
@@ -259,6 +466,7 @@ def buy_fighters():
                 owned_fighters[fighter] = 1
                 battle_stats[fighter] = {"battles": 0, "wins": 0, "losses": 0}
                 print(f"You bought {fighter}!")
+                check_quests("buy_fighter")
             else:
                 print("Not enough coins!")
             buy_fighters()
@@ -275,7 +483,7 @@ def upgrade_fighters():
     global coins
     print("\n=== Upgrade Fighters ===")
     for idx, (fighter, level) in enumerate(owned_fighters.items(), 1):
-        if fighter == "Goku":
+        if fighter == "Goku" or fighter == "Sung Jin Woo":
             maxed = "(NOT UPGRADABLE)"
         else:
             next_cost = 10 + (level - 1) * 5
@@ -283,18 +491,21 @@ def upgrade_fighters():
         print(f"{idx}. {fighter} (Level {level}) {maxed}")
     print(f"{len(owned_fighters)+1}. Back to shop")
     choice = input("Choose a fighter to upgrade: ")
+    # Goku 999 cheat
     if choice == "999":
-        for fighter in owned_fighters:
-            owned_fighters[fighter] = 999
-        print("All fighters upgraded to level 999!")
+        if "Goku" in owned_fighters:
+            owned_fighters["Goku"] = 999
+            print("Goku upgraded to level 999! (Infinite health and power in battle!)")
+        else:
+            print("You don't own Goku!")
         upgrade_fighters()
         return
     if choice.isdigit():
         choice = int(choice)
         if 1 <= choice <= len(owned_fighters):
             fighter = list(owned_fighters.keys())[choice-1]
-            if fighter == "Goku":
-                print("Goku cannot be upgraded!")
+            if fighter == "Goku" or fighter == "Sung Jin Woo":
+                print(f"{fighter} cannot be upgraded!")
                 upgrade_fighters()
                 return
             level = owned_fighters[fighter]
@@ -514,6 +725,7 @@ def equip_attack():
                     attack = available[attack_choice-1]
                     equipped_attacks[fighter] = attack
                     print(f"{fighter} equipped with {attack}!")
+                    check_quests("equip_attack")
                 else:
                     print("Invalid attack.")
             else:
@@ -549,6 +761,7 @@ def upgrade_items():
                 owned_items[item] += 1
                 coins -= upgrade_cost
                 print(f"{item} upgraded to level {owned_items[item]}! (Cost: {upgrade_cost} coins)")
+                check_quests("upgrade_item")
             else:
                 print("Not enough coins!")
             upgrade_items()
